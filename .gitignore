@@ -1,3 +1,12 @@
+# Ignore js as we are using Typescript
+*.js
+!jest.config.js
+*.d.ts
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
 # Logs
 logs
 *.log
@@ -102,3 +111,6 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Parcel default cache directory
+.parcel-cache

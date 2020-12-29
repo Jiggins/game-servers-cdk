@@ -1,10 +1,15 @@
-import { Construct, Stack, StackProps, RemovalPolicy, CfnOutput } from '@aws-cdk/core'
 import { Repository } from '@aws-cdk/aws-ecr'
-import { Server } from './server'
+import { CfnOutput, Construct, RemovalPolicy, Stack, StackProps } from '@aws-cdk/core'
+import { SecurityGroup, Vpc } from '@aws-cdk/aws-ec2'
+
 import { Networking } from './networking'
 
-export class MinecraftCdkStack extends Stack {
-  constructor (scope: Construct, id: string, props?: StackProps) {
+export class GameServersBaseStack extends Stack {
+  readonly repository: Repository
+  readonly vpc: Vpc
+  readonly securityGroup: SecurityGroup
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
 
     const repository = new Repository(this, 'MinecraftRepository', {
@@ -14,12 +19,8 @@ export class MinecraftCdkStack extends Stack {
     })
 
     const network = new Networking(this, 'MinecraftNetwork')
-
-    const server = new Server(this, 'MinecraftServer', {
-      vpc: network.vpc,
-      securityGroup: network.securityGroup,
-      repository: repository
-    })
+    this.vpc = network.vpc
+    this.securityGroup = network.securityGroup
 
     new CfnOutput(this, 'RepositoryUri', {
       description: 'ECR repository URI',

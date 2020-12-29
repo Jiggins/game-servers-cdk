@@ -1,7 +1,20 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from '@aws-cdk/core';
-import { MinecraftCdkStack } from '../lib/minecraft-cdk-stack';
+import 'source-map-support/register'
+import { App } from '@aws-cdk/core'
 
-const app = new cdk.App();
-new MinecraftCdkStack(app, 'MinecraftCdkStack');
+import { CrewLinkServer } from '../lib/crewlink'
+import { GameServersBaseStack } from '../lib/gameServersBaseStack'
+import { MinecraftServer } from '../lib/servers/minecraft'
+
+const app = new App()
+const baseStack = new GameServersBaseStack(app, 'GameServersBaseStack')
+
+new MinecraftServer(app, 'Minecraft', {
+  vpc: baseStack.vpc,
+  securityGroup: baseStack.securityGroup,
+  repository: baseStack.repository,
+
+  tags: {
+    Name: 'Minecraft'
+  }
+})

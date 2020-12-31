@@ -2,7 +2,7 @@
 import 'source-map-support/register'
 import { App } from '@aws-cdk/core'
 
-import { CrewLinkServer } from '../lib/crewlink'
+import { CrewLinkServer } from '../lib/servers/crewlink'
 import { GameServersBaseStack } from '../lib/gameServersBaseStack'
 import { MinecraftServer } from '../lib/servers/minecraft'
 
@@ -16,5 +16,14 @@ new MinecraftServer(app, 'Minecraft', {
 
   tags: {
     Name: 'Minecraft'
+  }
+})
+
+new CrewLinkServer(app, 'CrewLink', {
+  vpc: baseStack.vpc,
+  securityGroup: baseStack.securityGroup,
+
+  tags: {
+    Name: 'CrewLink'
   }
 })

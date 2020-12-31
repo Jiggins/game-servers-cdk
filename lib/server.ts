@@ -24,9 +24,12 @@ export abstract class Server extends Stack {
   readonly logGroup: LogGroup
   readonly taskRole: Role
   readonly taskExecutionRole: Role
+  readonly vpc: Vpc
 
   constructor(scope: Construct, id: string, props: ServerProps) {
     super(scope, id)
+
+    this.vpc = props.vpc
 
     this.logGroup = new LogGroup(this, 'LogGroup', {
       logGroupName: this.stackName,

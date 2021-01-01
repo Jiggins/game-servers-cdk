@@ -1,6 +1,6 @@
+import * as elb from '@aws-cdk/aws-elasticloadbalancingv2'
 import { Construct } from '@aws-cdk/core'
 import { LogGroup } from '@aws-cdk/aws-logs'
-import { SubnetType } from '@aws-cdk/aws-ec2'
 import {
   Cluster,
   ContainerImage,
@@ -10,6 +10,16 @@ import {
   LogDrivers,
   Protocol
 } from '@aws-cdk/aws-ecs'
+import {
+  NetworkLoadBalancer,
+  NetworkTargetGroup
+} from '@aws-cdk/aws-elasticloadbalancingv2'
+import {
+  Peer,
+  Port,
+  SubnetSelection,
+  SubnetType
+} from '@aws-cdk/aws-ec2'
 
 import { Server, ServerProps } from '../server'
 
@@ -19,10 +29,23 @@ export class CrewLinkServer extends Server {
   readonly cluster: Cluster
   readonly service: FargateService
 
+  readonly subnet: SubnetSelection
+
   static readonly port = 9736
+  targetGroup: NetworkTargetGroup
 
   constructor(scope: Construct, id: string, props: ServerProps) {
     super(scope, id, props)
+
+    this.subnet = this.vpc.selectSubnets({
+      subnetGroupName: 'GameServers'
+    })
+
+    props.securityGroup.addIngressRule(
+      Peer.anyIpv4(),
+      Port.tcp(CrewLinkServer.port),
+      `Allow HTTP Ingress for CrewLink on port ${CrewLinkServer.port}`
+    )
 
     this.taskDefinition = new FargateTaskDefinition(this, 'TaskDefinition', {
       family: id
@@ -36,8 +59,12 @@ export class CrewLinkServer extends Server {
         logGroup: this.logGroup
       }),
 
+      environment: {
+        ADDRESS: '0.0.0.0'
+      },
+
       healthCheck: {
-        command: ['CMD-SHELL', `nc -vz localhost ${CrewLinkServer.port}`]
+        command: ['CMD-SHELL', `curl --fail http://localhost:${CrewLinkServer.port}`]
       }
     })
 
@@ -63,13 +90,38 @@ export class CrewLinkServer extends Server {
         subnetType: SubnetType.PUBLIC
       }),
 
-      // desiredCount is 0 since the task will be launched via a CloudWatch
-      // event rule
       desiredCount: 1,
 
       // We do not want autscaling to spin up a second instance! That sounds
       // expensive
       maxHealthyPercent: 100
     })
+
+    this.createLoadBalancer()
+  }
+
+  private createLoadBalancer() {
+    const loadBalancer = new NetworkLoadBalancer(this, 'NLB', {
+      loadBalancerName: 'CrewLink',
+      vpc: this.vpc,
+      vpcSubnets: this.subnet,
+      internetFacing: true
+    })
+
+    const listener = loadBalancer.addListener('Listener', {
+      port: CrewLinkServer.port,
+      protocol: elb.Protocol.TCP
+    })
+
+    this.targetGroup = listener.addTargets('ECSTarget', {
+      targetGroupName: 'CrewLink',
+      port: CrewLinkServer.port,
+
+      targets: [
+        this.service
+      ]
+    })
+
+    return loadBalancer
   }
 }

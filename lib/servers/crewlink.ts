@@ -54,7 +54,7 @@ export class CrewLinkServer extends Server {
     })
 
     const container = this.taskDefinition.addContainer('Container', {
-      image: ContainerImage.fromRegistry('ottomated/crewlink-server'),
+      image: this.containerImage(props.imageProps),
 
       logging: LogDrivers.awsLogs({
         streamPrefix: id,

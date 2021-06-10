@@ -5,7 +5,7 @@ import { IRepository } from '@aws-cdk/aws-ecr/lib'
 
 interface CommonRoleProps {
   logGroup: ILogGroup
-  repository: IRepository
+  repository?: IRepository
 }
 
 export class CommonRoles {
@@ -57,7 +57,7 @@ export class CommonRoles {
         'ecr:BatchGetImage'
       ],
       resources: [
-        props.repository.repositoryArn
+        props.repository ? props.repository.repositoryArn : '*'
       ],
       effect: Effect.ALLOW
     }))

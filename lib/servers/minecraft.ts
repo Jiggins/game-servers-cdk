@@ -21,10 +21,6 @@ import {
 
 import { Server, ServerProps } from '../server'
 
-export interface MinecraftServerProps extends ServerProps {
-  repository: Repository
-}
-
 export class MinecraftServer extends Server {
   readonly taskDefinition: FargateTaskDefinition
   readonly logGroup: LogGroup
@@ -38,7 +34,7 @@ export class MinecraftServer extends Server {
   readonly port: number
   readonly healthCheckPort: number
 
-  constructor(scope: Construct, id: string, props: MinecraftServerProps) {
+  constructor(scope: Construct, id: string, props: ServerProps) {
     super(scope, id, props)
 
     this.port = 25565

@@ -1,7 +1,7 @@
 import * as elb from '@aws-cdk/aws-elasticloadbalancingv2'
 import { LogGroup } from '@aws-cdk/aws-logs'
 import { Repository } from '@aws-cdk/aws-ecr'
-import { SubnetSelection } from '@aws-cdk/aws-ec2'
+import { Peer, Port, SubnetSelection } from '@aws-cdk/aws-ec2'
 import {
   Cluster,
   ContainerImage,
@@ -35,12 +35,30 @@ export class MinecraftServer extends Server {
 
   readonly subnet: SubnetSelection
 
+  readonly port: number
+  readonly healthCheckPort: number
+
   constructor(scope: Construct, id: string, props: MinecraftServerProps) {
     super(scope, id, props)
+
+    this.port = 25565
+    this.healthCheckPort = 8443
 
     this.subnet = this.vpc.selectSubnets({
       subnetGroupName: 'GameServers'
     })
+
+    props.securityGroup.addIngressRule(
+      Peer.anyIpv4(),
+      Port.tcp(this.port),
+      `Ingress on port ${this.port} for Minecraft`
+    )
+
+    props.securityGroup.addIngressRule(
+      Peer.anyIpv4(),
+      Port.tcp(this.healthCheckPort),
+      `Ingress on port ${this.healthCheckPort} for Minecraft Health Check`
+    )
 
     this.taskDefinition = new FargateTaskDefinition(this, 'TaskDefinition', {
       family: id,
@@ -57,7 +75,7 @@ export class MinecraftServer extends Server {
       image: ContainerImage.fromEcrRepository(Repository.fromRepositoryName(this, 'repository', 'minecraft')),
 
       healthCheck: {
-        command: ['CMD-SHELL', '/opt/minecraft/bin/healthcheck.py'],
+        command: ['CMD-SHELL', `curl -f http://localhost:${this.healthCheckPort}`],
         startPeriod: Duration.minutes(5)
       },
 
@@ -69,16 +87,15 @@ export class MinecraftServer extends Server {
 
     /** Minecraft server port */
     container.addPortMappings({
-      containerPort: 25565,
-      hostPort: 25565,
-      // TODO: This should be UDP
+      containerPort: this.port,
+      hostPort: this.port,
       protocol: Protocol.TCP
     })
 
     /** TCP Health check */
     container.addPortMappings({
-      containerPort: 8443,
-      hostPort: 8443,
+      containerPort: this.healthCheckPort,
+      hostPort: this.healthCheckPort,
       protocol: Protocol.TCP
     })
 
@@ -95,15 +112,11 @@ export class MinecraftServer extends Server {
       securityGroup: props.securityGroup,
       vpcSubnets: this.subnet,
 
-      desiredCount: 0,
+      desiredCount: 1,
 
-      // We do not want autscaling to spin up a second instance! That sounds
-      // expensive
-      maxHealthyPercent: 100,
-      healthCheckGracePeriod: Duration.minutes(5)
+      // We do not want autscaling to spin up a second instance! That sounds expensive
+      maxHealthyPercent: 100
     })
-
-    this.loadBalancer = this.createLoadBalancer()
   }
 
   private createLoadBalancer() {
@@ -115,13 +128,13 @@ export class MinecraftServer extends Server {
     })
 
     const listener = loadBalancer.addListener('Listener', {
-      port: 25565,
-      protocol: elb.Protocol.UDP
+      port: 8443,
+      protocol: elb.Protocol.TCP
     })
 
     this.targetGroup = listener.addTargets('ECSTarget', {
       targetGroupName: 'Minecraft',
-      port: 25565,
+      port: 8443,
 
       targets: [
         this.service

@@ -1,5 +1,5 @@
 import * as elb from '@aws-cdk/aws-elasticloadbalancingv2'
-import { Construct } from '@aws-cdk/core'
+import { Construct, Tags } from '@aws-cdk/core'
 import { LogGroup } from '@aws-cdk/aws-logs'
 import {
   Cluster,
@@ -36,6 +36,8 @@ export class CrewLinkServer extends Server {
 
   constructor(scope: Construct, id: string, props: ServerProps) {
     super(scope, id, props)
+
+    Tags.of(this).add('Name', 'CrewLink')
 
     this.subnet = this.vpc.selectSubnets({
       subnetGroupName: 'GameServers'

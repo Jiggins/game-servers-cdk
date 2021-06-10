@@ -21,10 +21,6 @@ module.exports = {
     'no-unused-vars': 0,
     '@typescript-eslint/no-unused-vars': 'warn',
 
-    'space-before-function-paren': ['warn', 'never'],
-    'sort-imports': ['warn', {
-      allowSeparatedGroups: true,
-      memberSyntaxSortOrder: ['none', 'all', 'single', 'multiple']
-    }]
+    'space-before-function-paren': ['warn', 'never']
   }
 }

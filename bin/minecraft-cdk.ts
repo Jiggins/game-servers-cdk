@@ -12,6 +12,7 @@ const baseStack = new GameServersBaseStack(app, 'GameServersBaseStack')
 new MinecraftServer(app, 'Minecraft', {
   vpc: baseStack.vpc,
   securityGroup: baseStack.securityGroup,
+  fileSystem: baseStack.fileSystem,
   imageProps: {
     repository: baseStack.repository
   },

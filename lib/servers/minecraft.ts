@@ -2,6 +2,7 @@ import * as elb from '@aws-cdk/aws-elasticloadbalancingv2'
 import { LogGroup } from '@aws-cdk/aws-logs'
 import { Repository } from '@aws-cdk/aws-ecr'
 import { Peer, Port, SubnetSelection } from '@aws-cdk/aws-ec2'
+import { FileSystem } from '@aws-cdk/aws-efs'
 import {
   Cluster,
   ContainerImage,
@@ -21,6 +22,10 @@ import {
 
 import { Server, ServerProps } from '../server'
 
+export interface MincecraftServerProps extends ServerProps {
+  fileSystem: FileSystem
+}
+
 export class MinecraftServer extends Server {
   readonly taskDefinition: FargateTaskDefinition
   readonly logGroup: LogGroup
@@ -34,7 +39,7 @@ export class MinecraftServer extends Server {
   readonly port: number
   readonly healthCheckPort: number
 
-  constructor(scope: Construct, id: string, props: ServerProps) {
+  constructor(scope: Construct, id: string, props: MincecraftServerProps) {
     super(scope, id, props)
 
     this.port = 25565
@@ -56,6 +61,8 @@ export class MinecraftServer extends Server {
       `Ingress on port ${this.healthCheckPort} for Minecraft Health Check`
     )
 
+    props.securityGroup.connections.allowTo(props.fileSystem, Port.tcp(2049))
+
     this.taskDefinition = new FargateTaskDefinition(this, 'TaskDefinition', {
       family: id,
 
@@ -65,6 +72,13 @@ export class MinecraftServer extends Server {
       executionRole: this.taskExecutionRole,
       taskRole: this.taskRole
 
+    })
+
+    this.taskDefinition.addVolume({
+      name: id,
+      efsVolumeConfiguration: {
+        fileSystemId: props.fileSystem.fileSystemId
+      }
     })
 
     const container = this.taskDefinition.addContainer('Container', {
@@ -93,6 +107,12 @@ export class MinecraftServer extends Server {
       containerPort: this.healthCheckPort,
       hostPort: this.healthCheckPort,
       protocol: Protocol.TCP
+    })
+
+    container.addMountPoints({
+      sourceVolume: 'Minecraft',
+      containerPath: '/mnt/minecraft',
+      readOnly: false
     })
 
     this.cluster = new Cluster(this, 'Cluster', {

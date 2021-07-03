@@ -21,6 +21,7 @@ import {
 } from '@aws-cdk/aws-elasticloadbalancingv2'
 
 import { Server, ServerProps } from '../server'
+import { PolicyStatement, Effect } from '@aws-cdk/aws-iam/lib'
 
 export interface MincecraftServerProps extends ServerProps {
   fileSystem: FileSystem
@@ -62,6 +63,17 @@ export class MinecraftServer extends Server {
     )
 
     props.securityGroup.connections.allowTo(props.fileSystem, Port.tcp(2049))
+
+    this.taskRole.addToPolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        'ec2:DescribeNetworkInterfaces',
+        'ecs:DescribeTasks',
+        'route53:ChangeResourceRecordSets',
+        'route53:ListHostedZonesByName'
+      ],
+      resources: ['*']
+    }))
 
     this.taskDefinition = new FargateTaskDefinition(this, 'TaskDefinition', {
       family: id,

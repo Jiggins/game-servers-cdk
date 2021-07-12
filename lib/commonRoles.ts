@@ -27,6 +27,16 @@ export class CommonRoles {
       effect: Effect.ALLOW
     }))
 
+    role.addToPolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        'kms:Decrypt',
+        'secretsmanager:GetSecretValue',
+        'ssm:GetParameters'
+      ],
+      resources: ['*']
+    }))
+
     return role
   }
 

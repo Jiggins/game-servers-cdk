@@ -12,7 +12,6 @@ const baseStack = new GameServersBaseStack(app, 'GameServersBaseStack')
 
 new MinecraftServer(app, 'Minecraft', {
   vpc: baseStack.vpc,
-  securityGroup: baseStack.securityGroup,
   fileSystem: baseStack.fileSystem,
   imageProps: {
     repository: baseStack.repository
@@ -36,7 +35,6 @@ new MinecraftServer(app, 'Minecraft', {
 
 new CrewLinkServer(app, 'CrewLink', {
   vpc: baseStack.vpc,
-  securityGroup: baseStack.securityGroup,
   imageProps: {
     repository: 'ottomated/crewlink-server'
   },

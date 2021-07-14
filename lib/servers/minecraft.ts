@@ -1,7 +1,6 @@
-import * as elb from '@aws-cdk/aws-elasticloadbalancingv2'
 import { LogGroup } from '@aws-cdk/aws-logs'
 import { Repository } from '@aws-cdk/aws-ecr'
-import { Peer, Port, SecurityGroup } from '@aws-cdk/aws-ec2'
+import { Port, SecurityGroup } from '@aws-cdk/aws-ec2'
 import { FileSystem } from '@aws-cdk/aws-efs'
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam'
 import { GraphWidget, Metric } from '@aws-cdk/aws-cloudwatch'

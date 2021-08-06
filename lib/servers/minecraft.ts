@@ -30,6 +30,24 @@ export class MinecraftServer extends Server {
   readonly loadBalancer: NetworkLoadBalancer
   targetGroup: NetworkTargetGroup
 
+  /** The worlds added by both Minecraft and various mods. Used in graphs */
+  static readonly worlds = [
+    'Overall:',
+    'appliedenergistics2:spatial_storage',
+    'compactmachines:compact_world',
+    'jamd:mining',
+    'javd:void',
+    'minecraft:overworld',
+    'minecraft:the_end',
+    'minecraft:the_nether',
+    'mythicbotany:alfheim',
+    'rats:ratlantis',
+    'twilightforest:skylight_forest',
+    'twilightforest:twilightforest',
+    'undergarden:undergarden',
+    'woot:tartarus'
+  ]
+
   static healthCheckPort = 8443
 
   constructor(scope: Construct, id: string, props: MincecraftServerProps) {
@@ -45,6 +63,8 @@ export class MinecraftServer extends Server {
       ],
       resources: ['*']
     }))
+
+    this.addMetrics()
   }
 
   protected createSecurityGroup(id: string, props: MincecraftServerProps): SecurityGroup {
@@ -108,6 +128,11 @@ export class MinecraftServer extends Server {
     this.dashboard.addWidgets(
       new GraphWidget({
         title: 'CPU & Memory VS Player Count',
+
+        height: 6,
+        width: 12,
+        period: Duration.minutes(1),
+
         left: [
           new Metric({
             namespace: 'AWS/ECS',
@@ -126,7 +151,122 @@ export class MinecraftServer extends Server {
               ClusterName: this.cluster.clusterName
             }
           })
-        ]
+        ],
+
+        leftYAxis: {
+          min: 0,
+          max: 100,
+          showUnits: true
+        },
+
+        right: [
+          new Metric({
+            namespace: 'GameServers/Minecraft',
+            metricName: 'PlayerCount',
+            dimensionsMap: {
+              ServerName: this.service.serviceName
+            }
+          })
+        ],
+
+        rightYAxis: {
+          min: 0,
+          showUnits: false
+        }
+      }),
+
+      new GraphWidget({
+        title: 'CPU & Memory Vs Tick Time',
+
+        height: 6,
+        width: 12,
+        period: Duration.minutes(1),
+
+        left: [
+          new Metric({
+            namespace: 'AWS/ECS',
+            metricName: 'CPUUtilization',
+            dimensionsMap: {
+              ServiceName: this.service.serviceName,
+              ClusterName: this.cluster.clusterName
+            }
+          }),
+
+          new Metric({
+            namespace: 'AWS/ECS',
+            metricName: 'MemoryUtilization',
+            dimensionsMap: {
+              ServiceName: this.service.serviceName,
+              ClusterName: this.cluster.clusterName
+            }
+          })
+        ],
+
+        leftYAxis: {
+          min: 0,
+          max: 100,
+          showUnits: true
+        },
+
+        right: [
+          new Metric({
+            namespace: 'GameServers/Minecraft',
+            metricName: 'Tick Time',
+            dimensionsMap: {
+              ServerName: this.service.serviceName,
+              dimension: 'Overall:'
+            }
+          })
+        ],
+
+        rightYAxis: {
+          min: 0,
+          showUnits: true
+        }
+      }),
+
+      new GraphWidget({
+        title: 'TPS by World',
+        height: 6,
+        width: 12,
+
+        left: MinecraftServer.worlds.map(dimension => {
+          return new Metric({
+            namespace: 'GameServers/Minecraft',
+            metricName: 'TPS',
+            dimensionsMap: {
+              ServerName: this.service.serviceName,
+              dimension: dimension
+            }
+          })
+        }),
+
+        leftYAxis: {
+          min: 0,
+          showUnits: false
+        }
+      }),
+
+      new GraphWidget({
+        title: 'Tick Time by World',
+        height: 6,
+        width: 12,
+
+        left: MinecraftServer.worlds.map(dimension => {
+          return new Metric({
+            namespace: 'GameServers/Minecraft',
+            metricName: 'Tick Time',
+            dimensionsMap: {
+              ServerName: this.service.serviceName,
+              dimension: dimension
+            }
+          })
+        }),
+
+        leftYAxis: {
+          min: 0,
+          showUnits: true
+        }
       })
     )
   }

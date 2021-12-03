@@ -32,7 +32,7 @@ export class GameServersBaseStack extends Stack {
     })
   }
 
-  private createEfsVolume(name: string): FileSystem {
+  createEfsVolume(name: string): FileSystem {
     const filesystem = new FileSystem(this, name, {
       fileSystemName: name,
       vpc: this.vpc,

@@ -1,20 +1,13 @@
-import * as elb from '@aws-cdk/aws-elasticloadbalancingv2'
 import { Construct, Tags } from '@aws-cdk/core'
 import { LogGroup } from '@aws-cdk/aws-logs'
+import { SubnetSelection } from '@aws-cdk/aws-ec2'
 import {
   Cluster,
-  ContainerImage,
-  FargatePlatformVersion,
   FargateService,
   FargateTaskDefinition,
   LogDrivers,
   Protocol
 } from '@aws-cdk/aws-ecs'
-import {
-  Peer,
-  Port,
-  SubnetSelection
-} from '@aws-cdk/aws-ec2'
 
 import { Server, ServerProps } from '../server'
 
@@ -36,14 +29,14 @@ export class CrewLinkServer extends Server {
     })
   }
 
-  protected createTaskDefinition(id: string, props: ServerProps): FargateTaskDefinition {
-    const taskDefinition = super.createTaskDefinition(id, props)
+  protected createTaskDefinition(props: ServerProps): FargateTaskDefinition {
+    const taskDefinition = super.createTaskDefinition(props)
 
     const container = taskDefinition.addContainer('Container', {
       image: this.containerImage(props.imageProps),
 
       logging: LogDrivers.awsLogs({
-        streamPrefix: id,
+        streamPrefix: this.serverName,
         logGroup: this.logGroup
       }),
 

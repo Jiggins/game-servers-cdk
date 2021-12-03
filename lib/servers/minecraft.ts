@@ -1,34 +1,20 @@
-import { LogGroup } from '@aws-cdk/aws-logs'
-import { Repository } from '@aws-cdk/aws-ecr'
-import { Port, SecurityGroup } from '@aws-cdk/aws-ec2'
-import { FileSystem } from '@aws-cdk/aws-efs'
+import { Construct, Duration } from '@aws-cdk/core'
+import { ContainerDefinitionOptions, ContainerImage, EnvironmentFile, LogDrivers } from '@aws-cdk/aws-ecs'
+import { GraphWidget, Metric, Dashboard } from '@aws-cdk/aws-cloudwatch'
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam'
-import { GraphWidget, Metric } from '@aws-cdk/aws-cloudwatch'
-import {
-  ContainerImage,
-  FargateTaskDefinition,
-  LogDrivers,
-  Protocol
-} from '@aws-cdk/aws-ecs'
-import {
-  Construct,
-  Duration
-} from '@aws-cdk/core'
-import {
-  NetworkLoadBalancer,
-  NetworkTargetGroup
-} from '@aws-cdk/aws-elasticloadbalancingv2'
+import { Repository } from '@aws-cdk/aws-ecr'
 
 import { Server, ServerProps } from '../server'
+import { Protocol } from '../util/types'
 
-export interface MincecraftServerProps extends ServerProps {
-  fileSystem: FileSystem
+type RequiredServerProps = Omit<ServerProps, 'networkProps'>
+
+export interface MincecraftServerProps extends RequiredServerProps {
+  environmentFile: string
 }
 
 export class MinecraftServer extends Server {
-  readonly logGroup: LogGroup
-  readonly loadBalancer: NetworkLoadBalancer
-  targetGroup: NetworkTargetGroup
+  static readonly healthCheckPort = 8443
 
   /** The worlds added by both Minecraft and various mods. Used in graphs */
   static readonly worlds = [
@@ -48,10 +34,19 @@ export class MinecraftServer extends Server {
     'woot:tartarus'
   ]
 
-  static healthCheckPort = 8443
-
   constructor(scope: Construct, id: string, props: MincecraftServerProps) {
-    super(scope, id, props)
+    super(scope, id, {
+      networkProps: {
+        port: 25565,
+        protocol: Protocol.TCP,
+        healthCheck: {
+          healthCheckPort: 8443,
+          protocol: Protocol.TCP
+        }
+      },
+
+      ...props
+    })
 
     this.taskRole.addToPolicy(new PolicyStatement({
       effect: Effect.ALLOW,
@@ -63,69 +58,32 @@ export class MinecraftServer extends Server {
       ],
       resources: ['*']
     }))
-
-    this.addMetrics()
   }
 
-  protected createSecurityGroup(id: string, props: MincecraftServerProps): SecurityGroup {
-    const securityGroup = super.createSecurityGroup(id, props)
-    securityGroup.connections.allowTo(props.fileSystem, Port.tcp(2049))
-
-    return securityGroup
-  }
-
-  protected createTaskDefinition(id: string, props: MincecraftServerProps): FargateTaskDefinition {
-    const taskDefinition = super.createTaskDefinition(id, props)
-
-    // Health check is usually on the same port but not for Minecraft
-    const healthCheckPort = props.networkProps.healthCheckPort ?? props.networkProps.port
-
-    taskDefinition.addVolume({
-      name: id,
-      efsVolumeConfiguration: {
-        fileSystemId: props.fileSystem.fileSystemId
-      }
-    })
-
-    const container = taskDefinition.addContainer('Container', {
+  protected containerDefinition(props: ServerProps): ContainerDefinitionOptions {
+    return {
       image: ContainerImage.fromEcrRepository(Repository.fromRepositoryName(this, 'repository', 'minecraft')),
 
       healthCheck: {
-        command: ['CMD-SHELL', `curl -f http://localhost:${healthCheckPort}`],
+        command: ['CMD-SHELL', `curl -f http://localhost:${MinecraftServer.healthCheckPort}`],
         startPeriod: Duration.minutes(5)
       },
+
+      environmentFiles: [
+        EnvironmentFile.fromAsset(props.environmentFile!)
+      ],
 
       logging: LogDrivers.awsLogs({
         streamPrefix: 'minecraft',
         logGroup: this.logGroup
-      })
-    })
+      }),
 
-    /** Minecraft server port */
-    container.addPortMappings({
-      containerPort: props.networkProps.port,
-      hostPort: props.networkProps.port,
-      protocol: Protocol.TCP
-    })
-
-    /** TCP Health check */
-    container.addPortMappings({
-      containerPort: MinecraftServer.healthCheckPort,
-      hostPort: MinecraftServer.healthCheckPort,
-      protocol: Protocol.TCP
-    })
-
-    container.addMountPoints({
-      sourceVolume: 'Minecraft',
-      containerPath: '/mnt/minecraft',
-      readOnly: false
-    })
-
-    return taskDefinition
+      ...props.containerDefinitionProps
+    }
   }
 
-  protected addMetrics() {
-    this.dashboard.addWidgets(
+  protected addMetrics(dashboard: Dashboard): void {
+    dashboard.addWidgets(
       new GraphWidget({
         title: 'CPU & Memory VS Player Count',
 

@@ -1,11 +1,12 @@
 #!/usr/bin/env node
+
 import 'source-map-support/register'
 import { App } from '@aws-cdk/core'
-import { Protocol } from '@aws-cdk/aws-elasticloadbalancingv2'
 
 import { CrewLinkServer } from '../lib/servers/crewlink'
 import { GameServersBaseStack } from '../lib/gameServersBaseStack'
 import { MinecraftServer } from '../lib/servers/minecraft'
+import { Protocol } from '../lib/util/types'
 
 const app = new App()
 const baseStack = new GameServersBaseStack(app, 'GameServersBaseStack')
@@ -13,19 +14,14 @@ const baseStack = new GameServersBaseStack(app, 'GameServersBaseStack')
 new MinecraftServer(app, 'Minecraft', {
   vpc: baseStack.vpc,
   fileSystem: baseStack.fileSystem,
+  environmentFile: 'etc/minecraft.env',
   imageProps: {
     repository: baseStack.repository
   },
 
-  containerProps: {
-    cpu: 2048,
+  taskDefinitionProps: {
+    cpu: 4096,
     memoryLimitMiB: 10240
-  },
-
-  networkProps: {
-    port: 25565,
-    healthCheckPort: 8443,
-    protocol: Protocol.TCP
   },
 
   tags: {

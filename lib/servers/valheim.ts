@@ -56,6 +56,11 @@ export class ValheimServer extends Server {
       containerDefinitionProps: {
         stopTimeout: Duration.seconds(120),
 
+        healthCheck: {
+          command: ['CMD-SHELL', 'curl -f http://localhost/status.json'],
+          interval: Duration.minutes(1)
+        },
+
         environment: {
           SERVER_NAME: props.valheimEnvironment.serverName,
           WORLD_NAME: props.valheimEnvironment.worldName,

@@ -196,6 +196,10 @@ export class Server extends Stack {
       platformVersion: FargatePlatformVersion.VERSION1_4,
       vpcSubnets: subnet,
 
+      circuitBreaker: {
+        rollback: true
+      },
+
       desiredCount: 1,
 
       // We do not want autscaling to spin up a second instance! That sounds expensive

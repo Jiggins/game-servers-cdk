@@ -34,9 +34,17 @@ export class GameServersBaseStack extends Stack {
   }
 
   createEfsVolume(name: string): FileSystem {
+    const securityGroup = new SecurityGroup(this, `${name}EfsSecurityGroup`, {
+      securityGroupName: `${name} EFS`,
+      description: `Allow access to the ${name} EFS volume`,
+      allowAllOutbound: false,
+      vpc: this.vpc
+    })
+
     const filesystem = new FileSystem(this, name, {
       fileSystemName: name,
       vpc: this.vpc,
+      securityGroup: securityGroup,
 
       encrypted: true,
       enableAutomaticBackups: true,

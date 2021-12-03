@@ -1,12 +1,13 @@
-import { Construct, Duration, Tags } from '@aws-cdk/core'
-import { LogGroup } from '@aws-cdk/aws-logs'
-import { Peer, Port, SubnetSelection } from '@aws-cdk/aws-ec2'
+import { Construct } from 'constructs'
+import { Duration, Tags } from 'aws-cdk-lib'
+import { LogGroup } from 'aws-cdk-lib/aws-logs'
+import { Peer, Port, SubnetSelection } from 'aws-cdk-lib/aws-ec2'
 import {
   Cluster,
   FargateService,
   FargateTaskDefinition,
   Protocol
-} from '@aws-cdk/aws-ecs'
+} from 'aws-cdk-lib/aws-ecs'
 
 import { Server, ServerProps } from '../server'
 

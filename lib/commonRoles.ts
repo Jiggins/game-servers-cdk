@@ -1,7 +1,7 @@
-import { Construct } from '@aws-cdk/core'
-import { Effect, PolicyStatement, Role, ServicePrincipal } from '@aws-cdk/aws-iam'
-import { LogGroup, ILogGroup } from '@aws-cdk/aws-logs/lib'
-import { IRepository } from '@aws-cdk/aws-ecr/lib'
+import { Construct } from 'constructs'
+import { Effect, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
+import { ILogGroup } from 'aws-cdk-lib/aws-logs'
+import { IRepository } from 'aws-cdk-lib/aws-ecr'
 
 interface CommonRoleProps {
   logGroup: ILogGroup

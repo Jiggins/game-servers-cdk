@@ -1,13 +1,11 @@
-import { Construct } from '@aws-cdk/core'
+import { Construct } from 'constructs'
 import {
-  GatewayVpcEndpointAwsService,
-  InterfaceVpcEndpointAwsService,
   Peer,
   Port,
   SecurityGroup,
   SubnetType,
   Vpc
-} from '@aws-cdk/aws-ec2'
+} from 'aws-cdk-lib/aws-ec2'
 
 export class Networking extends Construct {
   readonly vpc: Vpc

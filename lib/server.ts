@@ -1,10 +1,10 @@
+import { Construct } from 'constructs'
 import {
-  Construct,
   Duration,
   RemovalPolicy,
   Stack,
   StackProps
-} from '@aws-cdk/core'
+} from 'aws-cdk-lib'
 import {
   Cluster,
   ContainerDefinition,
@@ -16,14 +16,14 @@ import {
   FargateTaskDefinition,
   FargateTaskDefinitionProps,
   LogDrivers
-} from '@aws-cdk/aws-ecs'
-import { Dashboard, GraphWidget, Metric } from '@aws-cdk/aws-cloudwatch'
-import { FileSystem } from '@aws-cdk/aws-efs'
-import { IRepository, Repository } from '@aws-cdk/aws-ecr'
-import { LogGroup, RetentionDays } from '@aws-cdk/aws-logs'
-import { NetworkLoadBalancer, NetworkTargetGroup } from '@aws-cdk/aws-elasticloadbalancingv2'
-import { Peer, Port, SecurityGroup, SubnetSelection, Vpc } from '@aws-cdk/aws-ec2'
-import { Role } from '@aws-cdk/aws-iam'
+} from 'aws-cdk-lib/aws-ecs'
+import { Dashboard, GraphWidget, Metric } from 'aws-cdk-lib/aws-cloudwatch'
+import { FileSystem } from 'aws-cdk-lib/aws-efs'
+import { IRepository, Repository } from 'aws-cdk-lib/aws-ecr'
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
+import { NetworkLoadBalancer, NetworkTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import { Peer, Port, SecurityGroup, SubnetSelection, Vpc } from 'aws-cdk-lib/aws-ec2'
+import { Role } from 'aws-cdk-lib/aws-iam'
 
 import { CommonRoles } from './commonRoles'
 import { Protocol, UnifiedProtocol } from './util/types'
@@ -192,7 +192,7 @@ export class Server extends Stack {
       cluster: cluster,
       taskDefinition: taskDefinition,
       assignPublicIp: true,
-      securityGroup: securityGroup,
+      securityGroups: [securityGroup],
       platformVersion: FargatePlatformVersion.VERSION1_4,
       vpcSubnets: subnet,
 

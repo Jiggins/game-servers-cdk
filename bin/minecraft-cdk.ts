@@ -7,9 +7,12 @@ import { CrewLinkServer } from '../lib/servers/crewlink'
 import { GameServersBaseStack } from '../lib/gameServersBaseStack'
 import { MinecraftServer } from '../lib/servers/minecraft'
 import { Protocol } from '../lib/util/types'
+import { ValheimServer } from '../lib/servers/valheim'
 
 const app = new App()
 const baseStack = new GameServersBaseStack(app, 'GameServersBaseStack')
+
+const valheimVolume = baseStack.createEfsVolume('Valheim')
 
 new MinecraftServer(app, 'Minecraft', {
   vpc: baseStack.vpc,
